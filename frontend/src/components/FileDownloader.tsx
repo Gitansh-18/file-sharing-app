@@ -27,6 +27,7 @@ const FileDownloader: React.FC<FileDownloaderProps> = ({ fileId }) => {
         setFileName(file.name);
         setFileSize(file.size);
         setFileUrl(`https://res.cloudinary.com/dqs4ywt5i/raw/upload/${file.publicId}`);
+        
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching file:', error);

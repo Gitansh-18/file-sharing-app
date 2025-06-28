@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
-import { nanoid } from 'nanoid';
+import React, { createContext, useContext, useMemo, useCallback } from 'react';
 
 interface StoredFile {
   id: string;
@@ -18,64 +17,22 @@ interface FileStorageContextType {
 
 const FileStorageContext = createContext<FileStorageContextType | undefined>(undefined);
 
-const FILE_EXPIRY = 24 * 60 * 60 * 1000;
-const STORAGE_KEY = 'qrdrop-files';
-
-const CLOUDINARY_CLOUD_NAME = 'dqs4ywt5i';
-const CLOUDINARY_UPLOAD_PRESET = 'unsigned_qrdrop';
-const CLOUDINARY_API_KEY = '493336741586619';
-const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/raw/upload`;
+// Backend API base
+const API_BASE_URL = 'https://file-sharing-backend-d4ri.onrender.com';
 
 export const FileStorageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [files, setFiles] = useState<Record<string, StoredFile>>(() => {
-    try {
-      const storedFiles = localStorage.getItem(STORAGE_KEY);
-      return storedFiles ? JSON.parse(storedFiles) : {};
-    } catch (error) {
-      console.error('Failed to load files from localStorage:', error);
-      return {};
-    }
-  });
-
-  React.useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
-    } catch (error) {
-      console.error('Failed to save files to localStorage:', error);
-    }
-  }, [files]);
+  // Removed unused files state
 
   const clearExpiredFiles = useCallback(() => {
-    const now = Date.now();
-    const updatedFiles = { ...files };
-    let hasExpired = false;
-
-    Object.keys(updatedFiles).forEach((id) => {
-      if (now - updatedFiles[id].createdAt > FILE_EXPIRY) {
-        delete updatedFiles[id];
-        hasExpired = true;
-      }
-    });
-
-    if (hasExpired) {
-      setFiles(updatedFiles);
-    }
-  }, [files]);
-
-  React.useEffect(() => {
-    clearExpiredFiles();
-    const interval = setInterval(clearExpiredFiles, 60 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [clearExpiredFiles]);
+    // No local storage expiration logic needed now
+  }, []);
 
   const uploadFile = useCallback(async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-    formData.append('api_key', CLOUDINARY_API_KEY);
 
     try {
-      const response = await fetch(CLOUDINARY_URL, {
+      const response = await fetch(`${API_BASE_URL}/api/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -86,51 +43,36 @@ export const FileStorageProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
 
       const data = await response.json();
-      
-      if (!data.public_id) {
-        throw new Error('Invalid response from Cloudinary');
-      }
-
-      const id = nanoid(10);
-      
-      const fileData: StoredFile = {
-        id,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        publicId: data.public_id,
-        createdAt: Date.now(),
-      };
-
-      setFiles((prevFiles) => ({
-        ...prevFiles,
-        [id]: fileData,
-      }));
-
-      return id;
+      return data.id; // unique file ID for sharing
     } catch (error) {
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        throw new Error('Network error: Please check your internet connection');
-      }
-      throw error;
+      console.error('Upload error:', error);
+      throw new Error('Upload failed. Please try again.');
     }
   }, []);
 
   const getFile = useCallback(async (id: string): Promise<StoredFile | null> => {
-    const file = files[id];
-    if (!file) return null;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/file/${id}`);
+      if (!response.ok) {
+        console.error("Fetch failed:", response.statusText);
+        return null;
+      }
 
-    if (Date.now() - file.createdAt > FILE_EXPIRY) {
-      setFiles((prevFiles) => {
-        const newFiles = { ...prevFiles };
-        delete newFiles[id];
-        return newFiles;
-      });
+      const data = await response.json();
+
+      return {
+        id: data.id,
+        name: data.name,
+        size: data.size,
+        type: data.type,
+        publicId: data.publicId,
+        createdAt: new Date(data.createdAt).getTime(),
+      };
+    } catch (error) {
+      console.error('Backend fetch error:', error);
       return null;
     }
-
-    return file;
-  }, [files]);
+  }, []);
 
   const value = useMemo(() => ({
     uploadFile,

@@ -1,28 +1,30 @@
 const fs = require('fs');
-console.log('Does .env exist?', fs.existsSync(__dirname + '/.env'));
-console.log('Raw .env content:', fs.readFileSync(__dirname + '/.env', 'utf8'));
-
-require('dotenv').config({ path: __dirname + '/.env' });
-console.log('Environment variables:', {
-  MONGODB_URI: process.env.MONGODB_URI ? 'loaded' : 'missing',
-  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME ? 'loaded' : 'missing'
-});
-
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const { nanoid } = require('nanoid');
 const cloudinary = require('cloudinary').v2;
-
 const File = require('./models/file');
 
-const app = express();
+// Load environment variables
+console.log('Does .env exist?', fs.existsSync(__dirname + '/.env'));
+console.log('Raw .env content:', fs.readFileSync(__dirname + '/.env', 'utf8'));
 
+require('dotenv').config({ path: __dirname + '/.env' });
+
+console.log('Environment variables:', {
+  MONGODB_URI: process.env.MONGODB_URI ? 'loaded' : 'missing',
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME ? 'loaded' : 'missing'
+});
+
+// Setup Express
+const app = express();
 app.use(cors());
 app.use(fileUpload({ useTempFiles: true }));
 app.use(express.json());
 
+// MongoDB Connection
 console.log('Mongo URI:', process.env.MONGODB_URI);
 
 mongoose.connect(process.env.MONGODB_URI, {
@@ -35,12 +37,14 @@ mongoose.connect(process.env.MONGODB_URI, {
     process.exit(1);
   });
 
+// Cloudinary Config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// Upload Route
 app.post('/api/upload', async (req, res) => {
   try {
     if (!req.files || !req.files.file) {
@@ -80,6 +84,7 @@ app.post('/api/upload', async (req, res) => {
   }
 });
 
+// Download Route
 app.get('/api/file/:id', async (req, res) => {
   try {
     const file = await File.findOne({ id: req.params.id });
@@ -99,6 +104,7 @@ app.get('/api/file/:id', async (req, res) => {
   }
 });
 
+// Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
