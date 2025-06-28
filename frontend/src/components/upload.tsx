@@ -18,7 +18,7 @@ const Upload = () => {
     formData.append('file', file);
 
     try {
-      const res = await fetch('https://file-sharing-backend-d4ri.onrender.com/upload', {
+      const res = await fetch('https://file-sharing-backend-d4ri.onrender.com/api/upload', {
         method: 'POST',
         body: formData,
       });
