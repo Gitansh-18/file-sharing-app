@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useMemo, useCallback } from 'react';
 
 interface StoredFile {
+  format: string;
+  url: any;
   id: string;
   name: string;
   size: number;
