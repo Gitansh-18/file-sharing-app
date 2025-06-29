@@ -65,12 +65,15 @@ const Download: React.FC = () => {
         <h2 className="text-xl font-semibold">{fileName}</h2>
         <p className="text-sm text-gray-600">Size: {(fileSize / 1024).toFixed(2)} KB</p>
         <a
-          href={fileUrl}
-          download={fileName}
-          className="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-        >
-          Download Now
-        </a>
+         href={fileUrl}
+         download={fileName} // Triggers download with correct filename
+         target="_blank"
+          rel="noopener noreferrer"
+           className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+           >
+         Download {fileName}
+       </a>
+
       </div>
     </div>
   );
