@@ -18,8 +18,6 @@ const FileDownloader: React.FC<FileDownloaderProps> = ({ fileId }) => {
     const fetchFile = async () => {
       try {
         const file = await getFile(fileId);
-        console.log('Fetched file:', file); // Debug log
-
         if (!file) {
           setError('File not found. It may have expired or been removed.');
           setIsLoading(false);
@@ -28,17 +26,9 @@ const FileDownloader: React.FC<FileDownloaderProps> = ({ fileId }) => {
 
         setFileName(file.name);
         setFileSize(file.size);
+        setFileUrl(file.url);
 
-        if (file.url) {
-          setFileUrl(file.url);
-        } else if (file.publicId) {
-          // Add extension if you have it, otherwise default to pdf
-          const ext = file.format || 'pdf';
-          setFileUrl(`https://res.cloudinary.com/dqs4ywt5i/raw/upload/${file.publicId}.${ext}`);
-        } else {
-          setError('Invalid file data received.');
-        }
-
+        
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching file:', error);
@@ -58,8 +48,7 @@ const FileDownloader: React.FC<FileDownloaderProps> = ({ fileId }) => {
 
   const downloadFile = () => {
     if (!fileUrl || !fileName) return;
-    // To trigger download, open the file URL in new tab/window:
-    window.open(fileUrl, '_blank');
+    window.location.href = fileUrl;
   };
 
   if (isLoading) {
@@ -87,7 +76,7 @@ const FileDownloader: React.FC<FileDownloaderProps> = ({ fileId }) => {
         <h2 className="text-xl font-bold text-gray-800 mb-1">Ready to Download</h2>
         <p className="text-gray-600">The file is ready for you to download</p>
       </div>
-
+      
       <div className="border border-gray-200 rounded-md p-4 mb-6">
         <div className="flex flex-col">
           <span className="text-sm text-gray-500">File name:</span>
@@ -98,7 +87,7 @@ const FileDownloader: React.FC<FileDownloaderProps> = ({ fileId }) => {
           <span className="font-medium">{formatFileSize(fileSize)}</span>
         </div>
       </div>
-
+      
       <button
         onClick={downloadFile}
         className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
@@ -106,7 +95,7 @@ const FileDownloader: React.FC<FileDownloaderProps> = ({ fileId }) => {
         <Download className="h-5 w-5" />
         <span>Download File</span>
       </button>
-
+      
       <p className="mt-4 text-xs text-center text-gray-500">
         By downloading, you accept responsibility for any risks associated with the file
       </p>

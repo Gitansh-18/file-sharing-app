@@ -95,6 +95,7 @@ app.get('/api/file/:id', async (req, res) => {
       name: file.name,
       size: file.size,
       type: file.type,
+      publicId: file.publicId,
       url: file.url || `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${file.publicId}`,
       createdAt: file.createdAt,
     });

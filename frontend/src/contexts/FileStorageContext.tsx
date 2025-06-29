@@ -2,7 +2,7 @@ import React, { createContext, useContext, useMemo, useCallback } from 'react';
 
 interface StoredFile {
   format: string;
-  url: any;
+  url: string;
   id: string;
   name: string;
   size: number;
@@ -63,13 +63,16 @@ export const FileStorageProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const data = await response.json();
 
       return {
-        id: data.id,
-        name: data.name,
-        size: data.size,
-        type: data.type,
-        publicId: data.publicId,
-        createdAt: new Date(data.createdAt).getTime(),
-      };
+  id: data.id,
+  name: data.name,
+  size: data.size,
+  type: data.type,
+  publicId: data.publicId,
+  url: data.url,
+  format: data.format, // Added format property
+  createdAt: new Date(data.createdAt).getTime(),
+};
+
     } catch (error) {
       console.error('Backend fetch error:', error);
       return null;
