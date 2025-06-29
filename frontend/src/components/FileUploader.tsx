@@ -1,11 +1,11 @@
+// FileUploader.tsx
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileX, Loader2, AlertCircle } from 'lucide-react';
 import { useFileStorage } from '../contexts/FileStorageContext';
 
-// 20MB in bytes
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
 const FileUploader: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -15,15 +15,15 @@ const FileUploader: React.FC = () => {
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
-    
+
     const file = acceptedFiles[0];
     setError(null);
-    
+
     if (file.size > MAX_FILE_SIZE) {
       setError('File is too large. Maximum size is 20MB.');
       return;
     }
-    
+
     try {
       setIsUploading(true);
       const fileId = await uploadFile(file);
@@ -65,7 +65,7 @@ const FileUploader: React.FC = () => {
         })}
       >
         <input {...getInputProps()} />
-        
+
         {isUploading ? (
           <div className="flex flex-col items-center text-gray-600">
             <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
@@ -88,7 +88,7 @@ const FileUploader: React.FC = () => {
           </div>
         )}
       </div>
-      
+
       {error && (
         <div className="mt-3 flex items-center justify-center text-red-500 text-sm">
           <AlertCircle className="w-4 h-4 mr-2" />

@@ -1,10 +1,7 @@
+// Download.tsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-// Update the import path below to the correct location of FileStorageContext
 import { useFileStorage } from '../contexts/FileStorageContext';
-
-
-
 
 const Download: React.FC = () => {
   const { fileId } = useParams<{ fileId: string }>();
@@ -20,8 +17,7 @@ const Download: React.FC = () => {
     const fetchFile = async () => {
       try {
         const file = await getFile(fileId || '');
-
-        console.log("Fetched file from backend:", file); // ✅ Debug log
+        console.log("Fetched file from backend:", file);
 
         if (!file || !file.id || !file.url) {
           console.warn("Invalid or missing file fields:", file);
@@ -65,15 +61,14 @@ const Download: React.FC = () => {
         <h2 className="text-xl font-semibold">{fileName}</h2>
         <p className="text-sm text-gray-600">Size: {(fileSize / 1024).toFixed(2)} KB</p>
         <a
-         href={fileUrl}
-         download={fileName} // Triggers download with correct filename
-         target="_blank"
+          href={fileUrl}
+          download={fileName}
+          target="_blank"
           rel="noopener noreferrer"
-           className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-           >
-         Download {fileName}
-       </a>
-
+          className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Download {fileName}
+        </a>
       </div>
     </div>
   );
