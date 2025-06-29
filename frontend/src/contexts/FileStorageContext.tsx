@@ -19,14 +19,11 @@ interface FileStorageContextType {
 
 const FileStorageContext = createContext<FileStorageContextType | undefined>(undefined);
 
-// Backend API base
 const API_BASE_URL = 'https://file-sharing-backend-d4ri.onrender.com';
 
 export const FileStorageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Removed unused files state
-
   const clearExpiredFiles = useCallback(() => {
-    // No local storage expiration logic needed now
+    // Placeholder for future cleanup logic if needed
   }, []);
 
   const uploadFile = useCallback(async (file: File): Promise<string> => {
@@ -45,7 +42,7 @@ export const FileStorageProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
 
       const data = await response.json();
-      return data.id; // unique file ID for sharing
+      return data.id;
     } catch (error) {
       console.error('Upload error:', error);
       throw new Error('Upload failed. Please try again.');
@@ -63,16 +60,15 @@ export const FileStorageProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const data = await response.json();
 
       return {
-  id: data.id,
-  name: data.name,
-  size: data.size,
-  type: data.type,
-  publicId: data.publicId,
-  url: data.url,
-  format: data.format, // Added format property
-  createdAt: new Date(data.createdAt).getTime(),
-};
-
+        id: data.id,
+        name: data.name,
+        size: data.size,
+        type: data.type,
+        publicId: data.publicId,
+        url: data.url,
+        format: data.format || '',
+        createdAt: new Date(data.createdAt).getTime(),
+      };
     } catch (error) {
       console.error('Backend fetch error:', error);
       return null;
@@ -94,7 +90,7 @@ export const FileStorageProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
 export const useFileStorage = (): FileStorageContextType => {
   const context = useContext(FileStorageContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useFileStorage must be used within a FileStorageProvider');
   }
   return context;
