@@ -25,7 +25,8 @@ const Upload = () => {
 
       const data = await res.json();
       if (res.ok) {
-        setMessage(`Upload success! File ID: ${data.fileId}`);
+        // ✅ Correct key based on backend response
+        setMessage(`Upload success! File ID: ${data.id}`);
       } else {
         setMessage(data.error || 'Upload failed');
       }
