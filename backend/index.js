@@ -50,9 +50,8 @@ app.post('/api/upload', async (req, res) => {
     }
 
     const file = req.files.file;
-    const originalName = file.name;
-    const ext = path.extname(originalName);
-    const baseName = path.basename(originalName, ext);
+    const ext = path.extname(file.name);
+    const baseName = path.basename(file.name, ext);
     const id = nanoid(10);
     const publicId = `files/${baseName}-${id}${ext}`;
 

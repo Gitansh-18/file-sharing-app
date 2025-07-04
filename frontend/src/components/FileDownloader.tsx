@@ -24,7 +24,7 @@ const Download: React.FC = () => {
         setFileName(file.name);
         setFileSize(file.size);
         setIsLoading(false);
-      } catch (error) {
+      } catch {
         setError('Failed to load file. Please try again.');
         setIsLoading(false);
       }
@@ -48,7 +48,7 @@ const Download: React.FC = () => {
       link.remove();
       window.URL.revokeObjectURL(downloadUrl);
       setIsDownloading(false);
-    } catch (error) {
+    } catch {
       alert('Download failed. Please try again.');
       setIsDownloading(false);
     }
