@@ -6,11 +6,11 @@ const mongoose = require('mongoose');
 const { nanoid } = require('nanoid');
 const cloudinary = require('cloudinary').v2;
 const File = require('./models/file');
+const path = require('path');
+const axios = require('axios');
+const streamifier = require('streamifier'); // npm install streamifier
 
 // Load environment variables
-console.log('Does .env exist?', fs.existsSync(__dirname + '/.env'));
-console.log('Raw .env content:', fs.readFileSync(__dirname + '/.env', 'utf8'));
-
 require('dotenv').config({ path: __dirname + '/.env' });
 
 console.log('Environment variables:', {
@@ -25,15 +25,13 @@ app.use(fileUpload({ useTempFiles: true }));
 app.use(express.json());
 
 // MongoDB Connection
-console.log('Mongo URI:', process.env.MONGODB_URI);
-
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-  .then(() => console.log('MongoDB connected'))
+  .then(() => console.log('✅ MongoDB connected'))
   .catch(err => {
-    console.error('MongoDB connection error:', err);
+    console.error('❌ MongoDB connection error:', err);
     process.exit(1);
   });
 
@@ -52,52 +50,63 @@ app.post('/api/upload', async (req, res) => {
     }
 
     const file = req.files.file;
-    const result = await cloudinary.uploader.upload(file.tempFilePath, {
-      resource_type: 'raw',
-      public_id: `files/${nanoid(10)}`,
-    });
-
+    const originalName = file.name;
+    const ext = path.extname(originalName);
+    const baseName = path.basename(originalName, ext);
     const id = nanoid(10);
-    const fileData = new File({
-      id,
-      name: file.name,
-      size: file.size,
-      type: file.mimetype,
-      publicId: result.public_id,
-      url: result.secure_url,
-      createdAt: Date.now(),
-    });
+    const publicId = `files/${baseName}-${id}${ext}`;
 
-    await fileData.save();
-
-    const shareableLink = `${req.protocol}://${req.get('host')}/api/file/${id}`;
-
-    res.json({
-      id,
-      name: file.name,
-      url: result.secure_url,
-      shareableLink,
-    });
+    // Upload using streamifier to ensure correct binary upload
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: 'raw',
+        public_id: publicId,
+      },
+      async (error, result) => {
+        if (error) {
+          console.error('Upload error:', error);
+          return res.status(500).json({ error: 'Upload failed' });
+        }
+        const fileData = new File({
+          id,
+          name: file.name,
+          size: file.size,
+          type: file.mimetype,
+          publicId: result.public_id,
+          url: result.secure_url,
+          createdAt: Date.now(),
+        });
+        await fileData.save();
+        res.json({
+          id,
+          url: result.secure_url,
+          name: file.name,
+        });
+      }
+    );
+    streamifier.createReadStream(file.data).pipe(uploadStream);
   } catch (err) {
     console.error('Upload error:', err);
     res.status(500).json({ error: 'Upload failed' });
   }
 });
 
-// Download Route
+// Download Route (returns Cloudinary URL with original filename)
 app.get('/api/file/:id', async (req, res) => {
   try {
     const file = await File.findOne({ id: req.params.id });
     if (!file) return res.status(404).json({ error: 'File not found' });
 
+    // Use the original filename in the download URL
+    const encodedName = encodeURIComponent(file.name);
+    const url = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/fl_attachment:${encodedName}/${file.publicId}`;
     res.json({
       id: file.id,
       name: file.name,
       size: file.size,
       type: file.type,
-      publicId: file.publicId,
-      url: file.url || `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${file.publicId}`,
-      createdAt: file.createdAt,
+      url,
+      createdAt: file.createdAt
     });
   } catch (err) {
     console.error('Fetch file error:', err);
@@ -105,7 +114,33 @@ app.get('/api/file/:id', async (req, res) => {
   }
 });
 
+// Download Route (streams file from Cloudinary)
+app.get('/api/download/:id', async (req, res) => {
+  try {
+    const file = await File.findOne({ id: req.params.id });
+    if (!file) return res.status(404).json({ error: 'File not found' });
+
+    // Cloudinary direct file URL
+    const cloudinaryUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${file.publicId}`;
+
+    // Set headers for download
+    res.setHeader('Content-Disposition', `attachment; filename="${file.name}"`);
+    res.setHeader('Content-Type', file.type);
+
+    // Stream from Cloudinary to client
+    const response = await axios({
+      method: 'get',
+      url: cloudinaryUrl,
+      responseType: 'stream'
+    });
+
+    response.data.pipe(res);
+  } catch (err) {
+    console.error('Download error:', err);
+    res.status(500).json({ error: 'Download failed' });
+  }
+});
+
 // Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`))
