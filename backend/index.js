@@ -20,7 +20,12 @@ console.log('Environment variables:', {
 
 // Setup Express
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'https://file-sharing-app-cyan-pi.vercel.app', // ✅ your Vercel frontend
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type'],
+}));
+
 app.use(fileUpload({ useTempFiles: true }));
 app.use(express.json());
 
